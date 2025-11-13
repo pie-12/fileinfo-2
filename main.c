@@ -271,8 +271,6 @@ void draw_preview(WINDOW *win, const char *base_path, const char *entry_name) {
     werase(win);
     box(win, 0, 0);
     
-    mvwprintw(win, 0, 2, " Preview ");
-
     char full_path[PATH_MAX];
     snprintf(full_path, sizeof(full_path), "%s/%s", base_path, entry_name);
 
@@ -283,13 +281,31 @@ void draw_preview(WINDOW *win, const char *base_path, const char *entry_name) {
         return;
     }
 
-    mvwprintw(win, 2, 2, "File: %s", entry_name);
-    mvwprintw(win, 4, 2, "Type: %s", S_ISDIR(st.st_mode) ? "Directory" : "Regular File");
-    mvwprintw(win, 5, 2, "Size: %lld bytes", (long long)st.st_size);
-    
-    char time_str[100];
-    strftime(time_str, sizeof(time_str), "%b %d %H:%M %Y", localtime(&st.st_mtime));
-    mvwprintw(win, 7, 2, "Modified: %s", time_str);
+    // Sử dụng kích thước file để chọn một Pokemon ID (từ 1 đến 1025)
+    // Điều này làm cho mỗi file có một Pokemon "đại diện"
+    int pokemon_id = (st.st_size % 1025) + 1;
 
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "pokeget %d", pokemon_id);
+
+    FILE *fp = popen(cmd, "r");
+    if (fp == NULL) {
+        mvwprintw(win, 2, 2, "Failed to run pokeget");
+        wrefresh(win);
+        return;
+    }
+
+    char line[256];
+    int row = 1;
+    int max_y, max_x;
+    getmaxyx(win, max_y, max_x);
+
+    while (fgets(line, sizeof(line), fp) != NULL && row < max_y - 1) {
+        // Xóa ký tự xuống dòng ở cuối
+        line[strcspn(line, "\n")] = 0;
+        mvwprintw(win, row++, 2, "%.*s", max_x - 3, line);
+    }
+
+    pclose(fp);
     wrefresh(win);
 }
