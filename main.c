@@ -112,11 +112,18 @@ int main() {
                 }
                 break;
             case KEY_LEFT:
-                // Di chuyển lên thư mục cha
-                snprintf(current_path, sizeof(current_path), "%s/..", current_path);
-                char resolved_path[PATH_MAX];
-                if (realpath(current_path, resolved_path)) {
-                    strcpy(current_path, resolved_path);
+                // Di chuyển lên thư mục cha một cách an toàn
+                if (strcmp(current_path, "/") != 0) { // Không đi lên từ thư mục gốc
+                    char *last_slash = strrchr(current_path, '/');
+                    if (last_slash != NULL) {
+                        if (last_slash == current_path) {
+                            // Nếu đường dẫn là "/home", ta muốn nó trở thành "/"
+                            *(last_slash + 1) = '\0';
+                        } else {
+                            // Nếu đường dẫn là "/home/user", ta muốn nó trở thành "/home"
+                            *last_slash = '\0';
+                        }
+                    }
                 }
                 current_selection = 0;
                 scroll_offset = 0;
