@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include <unistd.h>
 #include <locale.h>
+#include <time.h>
 
 // Cấu trúc để lưu một mục trong thư mục
 typedef struct {
@@ -24,7 +25,7 @@ int compare_entries(const void *a, const void *b);
 void free_entries(DirEntry *entries, int count);
 
 // Các hàm vẽ giao diện
-void draw_pane(WINDOW *win, const char *title, DirEntry *entries, int count, int highlight, int scroll_offset);
+void draw_pane(WINDOW *win, const char *title, DirEntry *entries, int count, int highlight, int scroll_offset, int pane_width);
 void draw_preview(WINDOW *win, const char *base_path, const char *entry_name);
 
 // --- Chương trình chính ---
@@ -83,8 +84,8 @@ int main() {
 
 
         // 3. Vẽ các cột
-        draw_pane(left_pane, "Parent", left_entries, left_count, -1, 0); // Không highlight cột trái
-        draw_pane(middle_pane, current_path, middle_entries, middle_count, current_selection, scroll_offset);
+        draw_pane(left_pane, "Parent", left_entries, left_count, -1, 0, pane_width); // Không highlight cột trái
+        draw_pane(middle_pane, current_path, middle_entries, middle_count, current_selection, scroll_offset, pane_width);
         if (middle_count > 0) {
             draw_preview(right_pane, current_path, middle_entries[current_selection].name);
         } else {
@@ -227,7 +228,7 @@ void free_entries(DirEntry *entries, int count) {
     }
 }
 
-void draw_pane(WINDOW *win, const char *title, DirEntry *entries, int count, int highlight, int scroll_offset) {
+void draw_pane(WINDOW *win, const char *title, DirEntry *entries, int count, int highlight, int scroll_offset, int pane_width) {
     werase(win);
     box(win, 0, 0);
     
