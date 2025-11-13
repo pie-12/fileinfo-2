@@ -26,7 +26,7 @@ void free_entries(DirEntry *entries, int count);
 
 // Các hàm vẽ giao diện
 void draw_pane(WINDOW *win, const char *title, DirEntry *entries, int count, int highlight, int scroll_offset, int pane_width);
-void draw_preview(WINDOW *win, const char *base_path, const char *entry_name);
+void draw_preview(WINDOW *win, const char *base_path, const char *entry_name, bool show_hidden);
 
 // --- Chương trình chính ---
 
@@ -83,19 +83,16 @@ int main() {
         }
 
         // 2. Vẽ giao diện
-        // Tạo tiêu đề động cho cột giữa để hiển thị trạng thái file ẩn
-        char middle_pane_title[PATH_MAX + 20];
-        snprintf(middle_pane_title, sizeof(middle_pane_title), "%s (Hidden: %s)", 
-                 current_path, show_hidden ? "On" : "Off");
-
         draw_pane(left_pane, "Parent", left_entries, left_count, -1, 0, pane_width);
-        draw_pane(middle_pane, middle_pane_title, middle_entries, middle_count, current_selection, scroll_offset, pane_width);
+        draw_pane(middle_pane, current_path, middle_entries, middle_count, current_selection, scroll_offset, pane_width);
         if (middle_count > 0) {
-            draw_preview(right_pane, current_path, middle_entries[current_selection].name);
+            draw_preview(right_pane, current_path, middle_entries[current_selection].name, show_hidden);
         } else {
             werase(right_pane);
             box(right_pane, 0, 0);
             mvwprintw(right_pane, 1, 2, "Empty directory");
+            // Cũng hiển thị trạng thái file ẩn ở đây
+            mvwprintw(right_pane, 3, 2, "Hidden Files: %s", show_hidden ? "On" : "Off");
             wrefresh(right_pane);
         }
 
@@ -315,7 +312,7 @@ void format_permissions(mode_t mode, char *perm_str) {
     perm_str[10] = '\0';
 }
 
-void draw_preview(WINDOW *win, const char *base_path, const char *entry_name) {
+void draw_preview(WINDOW *win, const char *base_path, const char *entry_name, bool show_hidden) {
     werase(win);
     box(win, 0, 0);
     
@@ -337,21 +334,24 @@ void draw_preview(WINDOW *win, const char *base_path, const char *entry_name) {
     format_permissions(st.st_mode, perm_str);
     mvwprintw(win, 4, 2, "Permissions: %s", perm_str);
 
-    // Thêm dòng diễn giải quyền cho dễ hiểu
+    // Diễn giải quyền cho người dùng
     char access_str[100];
-    strcpy(access_str, "Access: You can ");
-    bool can_do_something = false;
-    if (st.st_mode & S_IRUSR) { strcat(access_str, "Read"); can_do_something = true; }
-    if (st.st_mode & S_IWUSR) { if(can_do_something) strcat(access_str, ", "); strcat(access_str, "Write"); can_do_something = true; }
-    if (st.st_mode & S_IXUSR) { if(can_do_something) strcat(access_str, ", "); strcat(access_str, "Execute"); }
+    strcpy(access_str, "Access: ");
+    bool first_perm = true;
+    if (st.st_mode & S_IRUSR) { strcat(access_str, "Read"); first_perm = false; }
+    if (st.st_mode & S_IWUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Write"); first_perm = false; }
+    if (st.st_mode & S_IXUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Execute"); }
     mvwprintw(win, 5, 2, "%s", access_str);
 
-    mvwprintw(win, 6, 2, "Type: %s", S_ISDIR(st.st_mode) ? "Directory" : "Regular File");
-    mvwprintw(win, 7, 2, "Size: %lld bytes", (long long)st.st_size);
+    mvwprintw(win, 7, 2, "Type: %s", S_ISDIR(st.st_mode) ? "Directory" : "Regular File");
+    mvwprintw(win, 8, 2, "Size: %lld bytes", (long long)st.st_size);
     
     char time_str[100];
     strftime(time_str, sizeof(time_str), "%b %d %H:%M %Y", localtime(&st.st_mtime));
-    mvwprintw(win, 9, 2, "Modified: %s", time_str);
+    mvwprintw(win, 10, 2, "Modified: %s", time_str);
+
+    // Hiển thị trạng thái file ẩn
+    mvwprintw(win, 12, 2, "Hidden Files: %s", show_hidden ? "On" : "Off");
 
     wrefresh(win);
 }
