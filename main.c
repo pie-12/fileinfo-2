@@ -215,6 +215,7 @@ int get_dir_entries(const char *path, DirEntry **entries) {
         } else {
             entry->is_dir = false;
         }
+        count++;
     }
     closedir(d);
 
