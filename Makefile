@@ -1,6 +1,8 @@
 # Tên trình biên dịch
 CC = gcc
 
+SHELL = /bin/bash
+
 # Cờ cho trình biên dịch
 # -Wall: Bật tất cả các cảnh báo để code an toàn hơn
 # -g: Thêm thông tin gỡ lỗi (debug) vào file thực thi
