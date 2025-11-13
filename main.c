@@ -50,17 +50,16 @@ int main() {
     }
 
     int current_selection = 0;
-    int scroll_offset = 0; // Để cuộn danh sách file
-    int ch;
-    bool running = true;
-    bool show_hidden = false; // Trạng thái hiển thị file ẩn
+    int scroll_offset = 0;
+    bool show_hidden = false;
 
+    // --- Vòng lặp chính ---
+    bool running = true;
     while (running) {
-        // 1. Lấy danh sách file cho cột giữa (thư mục hiện tại)
+        // 1. Lấy dữ liệu cho trạng thái hiện tại
         DirEntry *middle_entries = NULL;
         int middle_count = get_dir_entries(current_path, &middle_entries, show_hidden);
 
-        // 2. Lấy danh sách file cho cột trái (thư mục cha)
         char parent_path[PATH_MAX];
         snprintf(parent_path, sizeof(parent_path), "%s/..", current_path);
         DirEntry *left_entries = NULL;
@@ -75,7 +74,7 @@ int main() {
         }
         
         // Logic cuộn
-        int pane_height = screen_height - 2; // Chiều cao có thể vẽ bên trong box
+        int pane_height = screen_height - 2;
         if (current_selection < scroll_offset) {
             scroll_offset = current_selection;
         }
@@ -83,9 +82,8 @@ int main() {
             scroll_offset = current_selection - pane_height + 1;
         }
 
-
-        // 3. Vẽ các cột
-        draw_pane(left_pane, "Parent", left_entries, left_count, -1, 0, pane_width); // Không highlight cột trái
+        // 2. Vẽ giao diện
+        draw_pane(left_pane, "Parent", left_entries, left_count, -1, 0, pane_width);
         draw_pane(middle_pane, current_path, middle_entries, middle_count, current_selection, scroll_offset, pane_width);
         if (middle_count > 0) {
             draw_preview(right_pane, current_path, middle_entries[current_selection].name);
@@ -96,14 +94,19 @@ int main() {
             wrefresh(right_pane);
         }
 
-        ch = getch();
+        // 3. Chờ người dùng nhập phím
+        int ch = getch();
 
+        // 4. Xử lý phím bấm
         switch (ch) {
             case 'q':
                 running = false;
                 break;
             case 'a':
                 show_hidden = !show_hidden;
+                // Đặt lại lựa chọn về 0 khi thay đổi chế độ xem
+                current_selection = 0;
+                scroll_offset = 0;
                 break;
             case KEY_DOWN:
                 if (current_selection < middle_count - 1) {
@@ -121,16 +124,14 @@ int main() {
                     char *last_slash = strrchr(current_path, '/');
                     if (last_slash != NULL) {
                         if (last_slash == current_path) {
-                            // Nếu đường dẫn là "/home", ta muốn nó trở thành "/"
                             *(last_slash + 1) = '\0';
                         } else {
-                            // Nếu đường dẫn là "/home/user", ta muốn nó trở thành "/home"
                             *last_slash = '\0';
                         }
+                        current_selection = 0;
+                        scroll_offset = 0;
                     }
                 }
-                current_selection = 0;
-                scroll_offset = 0;
                 break;
             case KEY_RIGHT:
             case '\n': // Phím Enter
