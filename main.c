@@ -53,17 +53,18 @@ int main() {
     int scroll_offset = 0; // Để cuộn danh sách file
     int ch;
     bool running = true;
+    bool show_hidden = false; // Trạng thái hiển thị file ẩn
 
     while (running) {
         // 1. Lấy danh sách file cho cột giữa (thư mục hiện tại)
         DirEntry *middle_entries = NULL;
-        int middle_count = get_dir_entries(current_path, &middle_entries);
+        int middle_count = get_dir_entries(current_path, &middle_entries, show_hidden);
 
         // 2. Lấy danh sách file cho cột trái (thư mục cha)
         char parent_path[PATH_MAX];
         snprintf(parent_path, sizeof(parent_path), "%s/..", current_path);
         DirEntry *left_entries = NULL;
-        int left_count = get_dir_entries(parent_path, &left_entries);
+        int left_count = get_dir_entries(parent_path, &left_entries, show_hidden);
 
         // Đảm bảo selection không vượt quá giới hạn
         if (current_selection >= middle_count) {
@@ -100,6 +101,9 @@ int main() {
         switch (ch) {
             case 'q':
                 running = false;
+                break;
+            case 'a':
+                show_hidden = !show_hidden;
                 break;
             case KEY_DOWN:
                 if (current_selection < middle_count - 1) {
@@ -184,7 +188,7 @@ int compare_entries(const void *a, const void *b) {
     return strcmp(entry_a->name, entry_b->name);
 }
 
-int get_dir_entries(const char *path, DirEntry **entries) {
+int get_dir_entries(const char *path, DirEntry **entries, bool show_hidden) {
     DIR *d = opendir(path);
     if (!d) return 0;
 
@@ -196,6 +200,11 @@ int get_dir_entries(const char *path, DirEntry **entries) {
     while ((dir = readdir(d)) != NULL) {
         // Bỏ qua "." và ".."
         if (strcmp(dir->d_name, ".") == 0 || strcmp(dir->d_name, "..") == 0) {
+            continue;
+        }
+
+        // Lọc file ẩn nếu cần
+        if (!show_hidden && dir->d_name[0] == '.') {
             continue;
         }
 
@@ -267,6 +276,39 @@ void draw_pane(WINDOW *win, const char *title, DirEntry *entries, int count, int
     wrefresh(win);
 }
 
+/**
+ * @brief Định dạng trường mode thành chuỗi 10 ký tự (ví dụ: -rwxr-xr-x).
+ * 
+ * @param mode Trường st_mode từ struct stat.
+ * @param perm_str Chuỗi để lưu kết quả (phải có ít nhất 11 byte).
+ */
+void format_permissions(mode_t mode, char *perm_str) {
+    // Ký tự đầu tiên cho loại file
+    if (S_ISDIR(mode)) perm_str[0] = 'd';
+    else if (S_ISLNK(mode)) perm_str[0] = 'l';
+    else if (S_ISCHR(mode)) perm_str[0] = 'c';
+    else if (S_ISBLK(mode)) perm_str[0] = 'b';
+    else perm_str[0] = '-'; // Regular file và các loại khác
+
+    // Quyền của Owner
+    perm_str[1] = (mode & S_IRUSR) ? 'r' : '-';
+    perm_str[2] = (mode & S_IWUSR) ? 'w' : '-';
+    perm_str[3] = (mode & S_IXUSR) ? 'x' : '-';
+
+    // Quyền của Group
+    perm_str[4] = (mode & S_IRGRP) ? 'r' : '-';
+    perm_str[5] = (mode & S_IWGRP) ? 'w' : '-';
+    perm_str[6] = (mode & S_IXGRP) ? 'x' : '-';
+
+    // Quyền của Others
+    perm_str[7] = (mode & S_IROTH) ? 'r' : '-';
+    perm_str[8] = (mode & S_IWOTH) ? 'w' : '-';
+    perm_str[9] = (mode & S_IXOTH) ? 'x' : '-';
+
+    // Ký tự kết thúc chuỗi
+    perm_str[10] = '\0';
+}
+
 void draw_preview(WINDOW *win, const char *base_path, const char *entry_name) {
     werase(win);
     box(win, 0, 0);
@@ -284,12 +326,17 @@ void draw_preview(WINDOW *win, const char *base_path, const char *entry_name) {
     }
 
     mvwprintw(win, 2, 2, "File: %s", entry_name);
-    mvwprintw(win, 4, 2, "Type: %s", S_ISDIR(st.st_mode) ? "Directory" : "Regular File");
-    mvwprintw(win, 5, 2, "Size: %lld bytes", (long long)st.st_size);
+
+    char perm_str[11];
+    format_permissions(st.st_mode, perm_str);
+    mvwprintw(win, 4, 2, "Permissions: %s", perm_str);
+
+    mvwprintw(win, 5, 2, "Type: %s", S_ISDIR(st.st_mode) ? "Directory" : "Regular File");
+    mvwprintw(win, 6, 2, "Size: %lld bytes", (long long)st.st_size);
     
     char time_str[100];
     strftime(time_str, sizeof(time_str), "%b %d %H:%M %Y", localtime(&st.st_mtime));
-    mvwprintw(win, 7, 2, "Modified: %s", time_str);
+    mvwprintw(win, 8, 2, "Modified: %s", time_str);
 
     wrefresh(win);
 }
