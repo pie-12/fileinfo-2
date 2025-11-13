@@ -101,19 +101,16 @@ int main() {
             case 'q':
                 running = false;
                 break;
-            case 'j':
             case KEY_DOWN:
                 if (current_selection < middle_count - 1) {
                     current_selection++;
                 }
                 break;
-            case 'k':
             case KEY_UP:
                 if (current_selection > 0) {
                     current_selection--;
                 }
                 break;
-            case 'h':
             case KEY_LEFT:
                 // Di chuyển lên thư mục cha
                 snprintf(current_path, sizeof(current_path), "%s/..", current_path);
@@ -124,7 +121,6 @@ int main() {
                 current_selection = 0;
                 scroll_offset = 0;
                 break;
-            case 'l':
             case KEY_RIGHT:
             case '\n': // Phím Enter
                 if (middle_count > 0 && middle_entries[current_selection].is_dir) {
