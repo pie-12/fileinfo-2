@@ -1,0 +1,5 @@
+# Bỏ qua file thực thi được biên dịch
+fileinfo
+
+# Bỏ qua file giải thích dự án
+GIAI_THICH_DU_AN.txt
