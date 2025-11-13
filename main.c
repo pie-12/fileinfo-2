@@ -20,7 +20,7 @@ void init_ncurses();
 void cleanup_ncurses();
 
 // Các hàm xử lý thư mục
-int get_dir_entries(const char *path, DirEntry **entries);
+int get_dir_entries(const char *path, DirEntry **entries, bool show_hidden);
 int compare_entries(const void *a, const void *b);
 void free_entries(DirEntry *entries, int count);
 
