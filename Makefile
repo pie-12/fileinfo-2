@@ -6,6 +6,9 @@ CC = gcc
 # -g: Thêm thông tin gỡ lỗi (debug) vào file thực thi
 CFLAGS = -Wall -g
 
+# Cờ cho trình liên kết (linker)
+LDFLAGS = -lncurses
+
 # Tên file thực thi mục tiêu
 TARGET = fileinfo
 
@@ -17,7 +20,7 @@ all: $(TARGET)
 
 # Quy tắc để tạo file thực thi từ file mã nguồn
 $(TARGET): $(SRCS)
-	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS)
+	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
 
 # Target để dọn dẹp
 # Xóa file thực thi đã được tạo
