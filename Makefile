@@ -31,13 +31,14 @@ $(TARGET): $(SRCS) $(POKEGET_CMD)
 # Quy tắc để cài đặt pokeget nếu nó chưa tồn tại
 $(POKEGET_CMD):
 	@echo "Phụ thuộc 'pokeget' chưa được cài đặt vào thư mục cục bộ."
-	@echo "Đang tự động cài đặt..."
-	@# Tải script về file tạm để thực thi một cách đáng tin cậy
-	@curl -sL https://raw.githubusercontent.com/talwat/pokeget/main/scripts/install.sh > /tmp/pokeget_install.sh
-	@# Tự động trả lời các câu hỏi của script và thực thi
-	@printf "pokeget\nlocal\ny\nn\n" | bash /tmp/pokeget_install.sh
-	@# Dọn dẹp file script tạm
-	@rm /tmp/pokeget_install.sh
+	@echo "Đang tự động cài đặt thủ công..."
+	@# 1. Tạo thư mục cục bộ
+	@mkdir -p $(LOCAL_DIR)/bin
+	@# 2. Tải trực tiếp file script pokeget vào thư mục bin cục bộ
+	@curl -sL https://raw.githubusercontent.com/talwat/pokeget/main/pokeget -o $(POKEGET_CMD)
+	@# 3. Cấp quyền thực thi cho nó
+	@chmod +x $(POKEGET_CMD)
+	@echo "pokeget đã được cài đặt cục bộ vào $(POKEGET_CMD)"
 
 # Target để dọn dẹp
 # Xóa file thực thi và thư mục cài đặt cục bộ
