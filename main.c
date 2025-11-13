@@ -60,10 +60,14 @@ int main() {
         DirEntry *middle_entries = NULL;
         int middle_count = get_dir_entries(current_path, &middle_entries, show_hidden);
 
-        char parent_path[PATH_MAX];
-        snprintf(parent_path, sizeof(parent_path), "%s/..", current_path);
+        // 2. Lấy danh sách file cho cột trái (thư mục cha)
         DirEntry *left_entries = NULL;
-        int left_count = get_dir_entries(parent_path, &left_entries, show_hidden);
+        int left_count = 0;
+        if (strcmp(current_path, "/") != 0) {
+            char parent_path[PATH_MAX];
+            snprintf(parent_path, sizeof(parent_path), "%s/..", current_path);
+            left_count = get_dir_entries(parent_path, &left_entries, show_hidden);
+        }
 
         // Đảm bảo selection không vượt quá giới hạn
         if (current_selection >= middle_count) {
@@ -280,6 +284,37 @@ void draw_pane(WINDOW *win, const char *title, DirEntry *entries, int count, int
 }
 
 /**
+ * @brief Trả về chuỗi mô tả loại file cụ thể hơn dựa trên tên.
+ * 
+ * @param filename Tên file.
+ * @return const char* Chuỗi mô tả loại file.
+ */
+const char* get_file_type_description(const char *filename) {
+    const char *ext = strrchr(filename, '.');
+    if (ext == NULL) {
+        return "File";
+    }
+    ext++; // Bỏ qua dấu chấm
+
+    if (strcmp(ext, "c") == 0) return "C Source";
+    if (strcmp(ext, "cpp") == 0 || strcmp(ext, "cxx") == 0) return "C++ Source";
+    if (strcmp(ext, "h") == 0 || strcmp(ext, "hpp") == 0) return "Header";
+    if (strcmp(ext, "py") == 0) return "Python Script";
+    if (strcmp(ext, "js") == 0) return "JavaScript";
+    if (strcmp(ext, "md") == 0) return "Markdown";
+    if (strcmp(ext, "txt") == 0) return "Text File";
+    if (strcmp(ext, "json") == 0) return "JSON";
+    if (strcmp(ext, "html") == 0) return "HTML";
+    if (strcmp(ext, "sh") == 0) return "Shell Script";
+    if (strcmp(ext, "mp3") == 0 || strcmp(ext, "flac") == 0) return "Audio";
+    if (strcmp(ext, "mp4") == 0 || strcmp(ext, "mkv") == 0) return "Video";
+    if (strcmp(ext, "png") == 0 || strcmp(ext, "jpg") == 0 || strcmp(ext, "jpeg") == 0) return "Image";
+    if (strcmp(ext, "zip") == 0 || strcmp(ext, "tar") == 0 || strcmp(ext, "gz") == 0) return "Archive";
+    
+    return "File";
+}
+
+/**
  * @brief Định dạng trường mode thành chuỗi 10 ký tự (ví dụ: -rwxr-xr-x).
  * 
  * @param mode Trường st_mode từ struct stat.
@@ -328,22 +363,31 @@ void draw_preview(WINDOW *win, const char *base_path, const char *entry_name, bo
         return;
     }
 
-    mvwprintw(win, 2, 2, "File: %s", entry_name);
+    mvwprintw(win, 2, 2, "Name: %s", entry_name);
 
     char perm_str[11];
     format_permissions(st.st_mode, perm_str);
     mvwprintw(win, 4, 2, "Permissions: %s", perm_str);
 
-    // Diễn giải quyền cho người dùng
+    // Diễn giải quyền cho người dùng một cách trực quan hơn
     char access_str[100];
     strcpy(access_str, "Access: ");
     bool first_perm = true;
-    if (st.st_mode & S_IRUSR) { strcat(access_str, "Read"); first_perm = false; }
-    if (st.st_mode & S_IWUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Write"); first_perm = false; }
-    if (st.st_mode & S_IXUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Execute"); }
+
+    if (S_ISDIR(st.st_mode)) {
+        // Diễn giải cho thư mục
+        if (st.st_mode & S_IRUSR) { strcat(access_str, "List"); first_perm = false; }
+        if (st.st_mode & S_IWUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Modify"); first_perm = false; }
+        if (st.st_mode & S_IXUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Enter"); }
+    } else {
+        // Diễn giải cho file
+        if (st.st_mode & S_IRUSR) { strcat(access_str, "Read"); first_perm = false; }
+        if (st.st_mode & S_IWUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Write"); first_perm = false; }
+        if (st.st_mode & S_IXUSR) { if (!first_perm) strcat(access_str, ", "); strcat(access_str, "Execute"); }
+    }
     mvwprintw(win, 5, 2, "%s", access_str);
 
-    mvwprintw(win, 7, 2, "Type: %s", S_ISDIR(st.st_mode) ? "Directory" : "Regular File");
+    mvwprintw(win, 7, 2, "Type: %s", S_ISDIR(st.st_mode) ? "Directory" : get_file_type_description(entry_name));
     mvwprintw(win, 8, 2, "Size: %lld bytes", (long long)st.st_size);
     
     char time_str[100];
