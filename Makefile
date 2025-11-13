@@ -4,10 +4,14 @@ CC = gcc
 # Cờ cho trình biên dịch
 # -Wall: Bật tất cả các cảnh báo để code an toàn hơn
 # -g: Thêm thông tin gỡ lỗi (debug) vào file thực thi
+# -DPOKEGET_CMD=...: Truyền đường dẫn pokeget cục bộ vào chương trình C
 CFLAGS = -Wall -g
-
-# Cờ cho trình liên kết (linker)
 LDFLAGS = -lncurses
+
+# --- Cấu hình cài đặt cục bộ ---
+LOCAL_DIR = $(CURDIR)/.local
+POKEGET_CMD = $(LOCAL_DIR)/bin/pokeget
+CFLAGS += -DPOKEGET_CMD='"$(POKEGET_CMD)"'
 
 # Tên file thực thi mục tiêu
 TARGET = fileinfo
@@ -15,31 +19,28 @@ TARGET = fileinfo
 # Tên file mã nguồn
 SRCS = main.c
 
-# Biến kiểm tra sự tồn tại của pokeget
-POKEGET_CHECK = command -v pokeget >/dev/null 2>&1
-
 # Target mặc định, được chạy khi gõ `make`
-all: check_deps $(TARGET)
+all: $(TARGET)
 
-check_deps:
-	@if ! $(POKEGET_CHECK); then \
-		echo "Lỗi: 'pokeget' chưa được cài đặt."; \
-		echo "Hãy chạy 'make install_deps' để cài đặt."; \
-		exit 1; \
-	fi
-
-# Quy tắc để tạo file thực thi từ file mã nguồn
-$(TARGET): $(SRCS)
+# Quy tắc để tạo file thực thi, phụ thuộc vào việc cài đặt pokeget trước
+$(TARGET): $(SRCS) $(POKEGET_CMD)
 	$(CC) $(CFLAGS) -o $(TARGET) $(SRCS) $(LDFLAGS)
 
-# Target để cài đặt các phụ thuộc
-install_deps:
-	@echo "Đang cài đặt pokeget..."
-	@curl -sL https://raw.githubusercontent.com/talwat/pokeget/main/scripts/install.sh | bash
+# Quy tắc để cài đặt pokeget nếu nó chưa tồn tại
+$(POKEGET_CMD):
+	@echo "Phụ thuộc 'pokeget' chưa được cài đặt vào thư mục cục bộ."
+	@echo "Đang tự động cài đặt..."
+	@# Tự động trả lời các câu hỏi của script: 
+	@# 1. "pokeget" (chọn phiên bản)
+	@# 2. "local" (chọn cài đặt cục bộ)
+	@# 3. "y" (xác nhận đường dẫn)
+	@# 4. "n" (không thêm vào PATH)
+	@printf "pokeget\nlocal\ny\nn\n" | bash <(curl -sL https://raw.githubusercontent.com/talwat/pokeget/main/scripts/install.sh)
 
 # Target để dọn dẹp
-# Xóa file thực thi đã được tạo
+# Xóa file thực thi và thư mục cài đặt cục bộ
 clean:
 	rm -f $(TARGET)
+	rm -rf $(LOCAL_DIR)
 
-.PHONY: all clean install_deps check_deps
+.PHONY: all clean

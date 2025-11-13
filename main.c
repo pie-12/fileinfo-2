@@ -286,7 +286,8 @@ void draw_preview(WINDOW *win, const char *base_path, const char *entry_name) {
     int pokemon_id = (st.st_size % 1025) + 1;
 
     char cmd[256];
-    snprintf(cmd, sizeof(cmd), "pokeget %d", pokemon_id);
+    // Sử dụng macro POKEGET_CMD được truyền từ Makefile
+    snprintf(cmd, sizeof(cmd), "%s %d", POKEGET_CMD, pokemon_id);
 
     FILE *fp = popen(cmd, "r");
     if (fp == NULL) {
