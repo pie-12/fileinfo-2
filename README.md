@@ -28,6 +28,27 @@ Chương trình có giao diện 3 cột quen thuộc:
 - Xem trước thông tin chi tiết của file/thư mục (quyền, kích thước, ngày sửa đổi).
 - Hỗ trợ bật/tắt hiển thị các file và thư mục ẩn.
 
+## Cơ sở lý thuyết
+
+Dự án này được xây dựng dựa trên một số khái niệm và thư viện lập trình cơ bản, tạo nên một ứng dụng giao diện người dùng văn bản (TUI) hiệu quả và nhẹ.
+
+1.  **Giao diện người dùng văn bản (TUI - Text-based User Interface):**
+    *   Ứng dụng được thiết kế như một TUI, cung cấp trải nghiệm tương tác trực quan ngay trong môi trường terminal. Cách tiếp cận này không yêu cầu môi trường đồ họa (GUI), giúp chương trình chạy nhanh, tiêu thụ ít tài nguyên và có tính tương thích cao trên nhiều hệ thống khác nhau.
+
+2.  **Thư viện `ncurses`:**
+    *   Đây là nền tảng chính cho việc xây dựng giao diện. `ncurses` là một thư viện lập trình cho phép điều khiển màn hình terminal một cách độc lập với loại terminal cụ thể. Nó cung cấp các hàm để vẽ cửa sổ (panes), di chuyển con trỏ, sử dụng màu sắc và xử lý dữ liệu nhập từ bàn phím (`getch`). Toàn bộ giao diện ba cột của chương trình được quản lý bởi `ncurses`.
+
+3.  **API Hệ thống tệp của C/POSIX:**
+    *   Để tương tác với hệ thống tệp, dự án sử dụng các hàm thư viện C tiêu chuẩn:
+        *   **`dirent.h`**: Dùng để đọc nội dung của các thư mục (`opendir`, `readdir`).
+        *   **`sys/stat.h`**: Dùng để lấy thông tin chi tiết (metadata) của tệp và thư mục, chẳng hạn như kích thước, ngày sửa đổi và loại tệp (`stat`).
+
+4.  **Lập trình hướng sự kiện (Event-Driven Programming):**
+    *   Chương trình hoạt động theo một vòng lặp vô tận (`while(1)`), chờ đợi sự kiện từ người dùng (nhấn phím). Khi một phím được nhấn, chương trình sẽ xử lý sự kiện đó (ví dụ: di chuyển lựa chọn, đổi thư mục) và cập nhật lại giao diện. Đây là một mô hình lập trình phổ biến cho các ứng dụng tương tác.
+
+5.  **Kiến trúc giao diện ba cột:**
+    *   Lấy cảm hứng từ trình quản lý tệp `ranger`, giao diện được chia thành ba cột riêng biệt (thư mục cha, thư mục hiện tại, xem trước tệp). Kiến trúc này cho phép người dùng điều hướng hệ thống tệp phân cấp một cách trực quan và hiệu quả.
+
 ## Yêu cầu
 
 - Một trình biên dịch C (ví dụ: `gcc`).
