@@ -74,3 +74,42 @@ sudo apt-get install build-essential libncurses5-dev libncursesw5-dev
 | `→` hoặc `Enter`  | Đi vào thư mục con đang được chọn.     |
 | `a`               | Bật/Tắt hiển thị các file/thư mục ẩn. |
 | `q`               | Thoát chương trình.                     |
+
+## Cơ sở lý thuyết
+
+Dự án `FileInfo` được xây dựng dựa trên một số khái niệm và công nghệ nền tảng trong lập trình hệ thống trên môi trường Unix/Linux.
+
+### 1. Giao diện người dùng dạng văn bản (TUI - Text-based User Interface)
+
+TUI là một loại giao diện người dùng cho phép tương tác với chương trình thông qua môi trường dòng lệnh (terminal). Không giống như giao diện đồ họa (GUI), TUI sử dụng các ký tự văn bản, màu sắc và vị trí con trỏ để tạo ra các cửa sổ, panel và các thành phần tương tác.
+
+- **Ưu điểm:** Nhẹ, tiêu thụ ít tài nguyên, hoạt động hiệu quả qua các kết nối mạng chậm (ví dụ: SSH), và mang lại trải nghiệm tập trung, không bị phân tâm cho người dùng chuyên nghiệp.
+- **Vai trò trong dự án:** `FileInfo` sử dụng mô hình TUI để cung cấp một trình quản lý file nhanh và hiệu quả ngay trong terminal.
+
+### 2. Thư viện `ncurses`
+
+`Ncurses` (new curses) là một thư viện lập trình cung cấp một API cho phép các nhà phát triển viết các ứng dụng TUI một cách độc lập với loại terminal. Nó xử lý các chi tiết cấp thấp phức tạp như:
+
+- Di chuyển con trỏ đến các vị trí cụ thể trên màn hình.
+- Quản lý màu sắc cho văn bản và nền.
+- Tạo và quản lý các "cửa sổ" (windows) hoặc "panel" trên màn hình.
+- Xử lý input từ bàn phím một cách không đệm (unbuffered), cho phép chương trình phản ứng ngay lập tức với mỗi lần nhấn phím.
+
+Trong `FileInfo`, `ncurses` là công cụ chính để vẽ giao diện 3 cột, hiển thị danh sách file, và xử lý điều hướng từ người dùng.
+
+### 3. Tương tác với Hệ thống File trong C
+
+Để đọc thông tin về file và thư mục, chương trình sử dụng các API hệ thống tiêu chuẩn của C trên các hệ điều hành tương tự Unix:
+
+- **`<dirent.h>`:** Cung cấp các hàm để làm việc với các luồng thư mục (directory streams). Các hàm như `opendir()`, `readdir()`, và `closedir()` được dùng để liệt kê nội dung của một thư mục.
+- **`<sys/stat.h>`:** Cung cấp hàm `stat()` hoặc `lstat()`, cho phép lấy thông tin chi tiết (metadata) của một file hoặc thư mục, bao gồm:
+    - Quyền truy cập (permissions).
+    - Kích thước file (size).
+    - Loại (file thông thường, thư mục, symbolic link,...).
+    - Thời gian sửa đổi cuối cùng (last modification time).
+
+Đây là nền tảng cho tính năng xem trước (preview) và hiển thị thông tin file của `FileInfo`.
+
+### 4. Cấu trúc dữ liệu
+
+Để quản lý danh sách các file và thư mục, chương trình sử dụng các cấu trúc dữ liệu cơ bản như mảng động (dynamic arrays). Cấu trúc này cho phép lưu trữ một số lượng mục không xác định trước, sắp xếp chúng (ví dụ: theo tên), và truy cập hiệu quả để hiển thị lên giao diện.
